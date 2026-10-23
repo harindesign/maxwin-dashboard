@@ -2,81 +2,88 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>맥스윈 통합 업무 대시보드</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #f0f2f5;
             color: #333;
-            padding: 20px;
+            padding: 16px;
+            line-height: 1.4;
         }
         .header {
             background: #2c3e50;
             color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .header h1 {
-            font-size: 20px;
+            font-size: 18px;
+            font-weight: 700;
         }
         .container {
             display: grid;
             grid-template-columns: 320px 1fr;
-            gap: 20px;
+            gap: 16px;
         }
         .sidebar {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
         }
         .card {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .card h2 {
-            font-size: 16px;
-            margin-bottom: 15px;
+            font-size: 15px;
+            margin-bottom: 12px;
             border-bottom: 2px solid #3498db;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
             color: #2c3e50;
         }
         .today-box {
-            font-size: 14px;
+            font-size: 13px;
             color: #444;
             background: #f8f9fa;
             padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
             line-height: 1.4;
         }
         .result-box {
             background: #eef2f7;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .result-box:last-child {
+            margin-bottom: 0;
         }
         .label {
-            font-size: 12px;
+            font-size: 11px;
             color: #555;
             font-weight: bold;
         }
         .date {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: bold;
             color: #2c3e50;
-            margin-top: 4px;
+            margin-top: 2px;
             text-align: center;
         }
         .sunday-notice {
@@ -89,24 +96,25 @@
         .btn-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
         .doc-btn {
             background: #ffffff;
             border: 1.5px solid #00c73c;
             color: #008a28;
-            padding: 12px 15px;
+            padding: 12px 14px;
             border-radius: 8px;
             font-size: 13px;
             font-weight: bold;
             cursor: pointer;
             text-align: left;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            width: 100%;
         }
-        .doc-btn:hover {
+        .doc-btn:hover, .doc-btn:active {
             background: #00c73c;
             color: white;
         }
@@ -117,29 +125,34 @@
         }
         .main-content {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            min-height: 750px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 16px;
+            border-radius: 12px;
+            min-height: 700px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
         }
         .viewer-header {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: #2c3e50;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .viewer-header a {
             font-size: 12px;
             color: #3498db;
             text-decoration: none;
             font-weight: normal;
+            background: #f0f7fc;
+            padding: 4px 8px;
+            border-radius: 4px;
         }
         .viewer-header a:hover {
             text-decoration: underline;
@@ -154,17 +167,57 @@
             border: 1px dashed #ccc;
             border-radius: 8px;
             position: relative;
+            min-height: 500px;
         }
         .viewer-placeholder {
             color: #888;
-            font-size: 15px;
+            font-size: 14px;
             text-align: center;
+            padding: 20px;
         }
         iframe {
             width: 100%;
             height: 100%;
             border: none;
             border-radius: 6px;
+            min-height: 650px;
+        }
+
+        /* 📱 모바일/태블릿 맞춤 화면 최적화 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                flex-direction: column;
+                gap: 6px;
+                text-align: center;
+                padding: 12px;
+            }
+            .header h1 {
+                font-size: 16px;
+            }
+            .container {
+                grid-template-columns: 1fr; /* 세로 1열 전환 */
+                gap: 12px;
+            }
+            .card {
+                padding: 14px;
+            }
+            .doc-btn {
+                padding: 12px 14px;
+                font-size: 14px; /* 스마트폰터치 가독성 최적화 */
+            }
+            .main-content {
+                padding: 12px;
+                min-height: 550px;
+            }
+            .viewer-header {
+                font-size: 15px;
+            }
+            iframe {
+                min-height: 500px;
+            }
         }
     </style>
 </head>
@@ -172,7 +225,7 @@
 
     <div class="header">
         <h1>📱 맥스윈 통합 업무 대시보드</h1>
-        <div id="clock" style="font-size: 14px;"></div>
+        <div id="clock" style="font-size: 13px;"></div>
     </div>
 
     <div class="container">
@@ -216,6 +269,9 @@
                     <button class="doc-btn" onclick="showSheet('doc6', '유선 포인트표', this)">
                         📄 유선 포인트표 <span>▶</span>
                     </button>
+                    <button class="doc-btn" onclick="showSheet('doc7', '인센티브표', this)">
+                        📄 인센티브표 <span>▶</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -228,7 +284,7 @@
             </div>
             <div class="viewer-body" id="docContent">
                 <div class="viewer-placeholder">
-                    👈 왼쪽 메뉴에서 확인하실 정책 자료 버튼을 클릭하세요.
+                    👈 메뉴에서 확인하실 정책 자료를 선택해 주세요.
                 </div>
             </div>
         </div>
@@ -244,7 +300,8 @@
             doc3: '1240839869',  // 유선 신규정책 상세
             doc4: '1690749568',  // 유선 약정갱신
             doc5: '617883450',   // 무선 포인트표
-            doc6: '554077223'    // 유선 포인트표
+            doc6: '554077223',   // 유선 포인트표
+            doc7: '1222486188'   // 인센티브표
         };
 
         function calculateDates() {
