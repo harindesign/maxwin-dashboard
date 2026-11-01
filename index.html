@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>맥스윈 통합 업무 대시보드</title>
     <style>
         * {
@@ -145,17 +145,35 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-        .viewer-header a {
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .action-btn {
             font-size: 12px;
             color: #3498db;
             text-decoration: none;
             font-weight: normal;
             background: #f0f7fc;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #cce4f7;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
-        .viewer-header a:hover {
-            text-decoration: underline;
+        .action-btn:hover {
+            background: #e1f0fa;
+        }
+        .action-btn.zoom-btn {
+            background: #27ae60;
+            color: white;
+            border-color: #27ae60;
+            font-weight: bold;
+        }
+        .action-btn.zoom-btn:hover {
+            background: #219150;
         }
         .viewer-body {
             flex: 1;
@@ -167,7 +185,7 @@
             border: 1px dashed #ccc;
             border-radius: 8px;
             position: relative;
-            min-height: 500px;
+            min-height: 550px;
         }
         .viewer-placeholder {
             color: #888;
@@ -181,6 +199,85 @@
             border: none;
             border-radius: 6px;
             min-height: 650px;
+        }
+
+        /* 🔍 풀스크린 핀치 & 버튼 줌 팝업 모달 */
+        .zoom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 99999;
+            flex-direction: column;
+        }
+        .zoom-modal-header {
+            background: #1a252f;
+            color: white;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ctrl-btn {
+            background: #34495e;
+            color: white;
+            border: 1px solid #5d6d7e;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .ctrl-btn:active {
+            background: #5d6d7e;
+        }
+        .zoom-scale-text {
+            font-size: 13px;
+            color: #2ecc71;
+            font-weight: bold;
+            min-width: 48px;
+            text-align: center;
+        }
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .zoom-modal-body {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background: #525659;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            display: block;
+            position: relative;
+        }
+        .zoom-frame-container {
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0;
+            transition: transform 0.15s ease-out;
+        }
+        .zoom-frame-container iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 100vh;
         }
 
         /* 📱 모바일/태블릿 맞춤 화면 최적화 */
@@ -198,7 +295,7 @@
                 font-size: 16px;
             }
             .container {
-                grid-template-columns: 1fr; /* 세로 1열 전환 */
+                grid-template-columns: 1fr;
                 gap: 12px;
             }
             .card {
@@ -206,17 +303,17 @@
             }
             .doc-btn {
                 padding: 12px 14px;
-                font-size: 14px; /* 스마트폰터치 가독성 최적화 */
+                font-size: 14px;
             }
             .main-content {
                 padding: 12px;
-                min-height: 550px;
+                min-height: 500px;
             }
             .viewer-header {
-                font-size: 15px;
+                font-size: 14px;
             }
             iframe {
-                min-height: 500px;
+                min-height: 480px;
             }
         }
     </style>
@@ -280,7 +377,10 @@
         <div class="main-content">
             <div class="viewer-header">
                 <span id="docTitle">자료를 선택해 주세요</span>
-                <a id="sheetDirectLink" href="https://docs.google.com/spreadsheets/d/14N4Odm1NfiaSk5-a7_Sldls9Fm3CM1t0wFwT4F6RA-g/edit?usp=sharing" target="_blank" style="display:none;">🔗 구글 시트에서 수정하기</a>
+                <div class="action-btns" id="headerActions" style="display:none;">
+                    <button class="action-btn zoom-btn" onclick="openZoomModal()">🔍 크게보기 / 줌조절</button>
+                    <a id="sheetDirectLink" class="action-btn" href="https://docs.google.com/spreadsheets/d/14N4Odm1NfiaSk5-a7_Sldls9Fm3CM1t0wFwT4F6RA-g/edit?usp=sharing" target="_blank">🔗 구글 시트 앱에서 열기</a>
+                </div>
             </div>
             <div class="viewer-body" id="docContent">
                 <div class="viewer-placeholder">
@@ -290,10 +390,28 @@
         </div>
     </div>
 
+    <!-- 🔍 확대/축소 지원 풀스크린 팝업 모달 -->
+    <div class="zoom-modal" id="zoomModal">
+        <div class="zoom-modal-header">
+            <span id="modalTitle">정책 자료 상세보기</span>
+            <div class="zoom-controls">
+                <button class="ctrl-btn" onclick="zoomChange(-0.1)">➖ 축소</button>
+                <span class="zoom-scale-text" id="zoomScaleText">100%</span>
+                <button class="ctrl-btn" onclick="zoomChange(0.1)">➕ 확대</button>
+                <button class="ctrl-btn" onclick="zoomReset()">🔄 원본</button>
+            </div>
+            <button class="close-btn" onclick="closeZoomModal()">✕ 닫기</button>
+        </div>
+        <div class="zoom-modal-body" id="modalBody">
+            <div class="zoom-frame-container" id="zoomContainer">
+                <!-- 시트 iframe -->
+            </div>
+        </div>
+    </div>
+
     <script>
         const SPREADSHEET_ID = "14N4Odm1NfiaSk5-a7_Sldls9Fm3CM1t0wFwT4F6RA-g";
 
-        // 시트별 gid 지정
         const sheetGids = {
             doc1: '0',           // 무선 정책
             doc2: '232998545',   // 유선 신규정책 요약자료
@@ -303,6 +421,10 @@
             doc6: '554077223',   // 유선 포인트표
             doc7: '1222486188'   // 인센티브표
         };
+
+        let currentGid = '0';
+        let currentTitle = '';
+        let currentScale = 1.0;
 
         function calculateDates() {
             const today = new Date();
@@ -355,17 +477,53 @@
             buttons.forEach(b => b.classList.remove('active'));
             if(btnElement) btnElement.classList.add('active');
 
-            const titleEl = document.getElementById('docTitle');
-            const contentEl = document.getElementById('docContent');
-            const linkEl = document.getElementById('sheetDirectLink');
+            currentTitle = title;
+            currentGid = sheetGids[docKey] || '0';
 
-            titleEl.innerText = title;
-            linkEl.style.display = "inline";
+            document.getElementById('docTitle').innerText = title;
+            document.getElementById('headerActions').style.display = "flex";
 
-            const gid = sheetGids[docKey] || '0';
-            const embedUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/htmlembed?gid=${gid}&widget=false&chrome=false`;
+            const embedUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/htmlembed?gid=${currentGid}&widget=false&chrome=false`;
 
-            contentEl.innerHTML = `<iframe src="${embedUrl}"></iframe>`;
+            document.getElementById('docContent').innerHTML = `<iframe src="${embedUrl}"></iframe>`;
+        }
+
+        function openZoomModal() {
+            if(!currentGid) return;
+            const embedUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/htmlembed?gid=${currentGid}&widget=false&chrome=false`;
+            
+            document.getElementById('modalTitle').innerText = `📄 ${currentTitle}`;
+            document.getElementById('zoomContainer').innerHTML = `<iframe src="${embedUrl}"></iframe>`;
+            document.getElementById('zoomModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            zoomReset();
+        }
+
+        function closeZoomModal() {
+            document.getElementById('zoomModal').style.display = 'none';
+            document.getElementById('zoomContainer').innerHTML = '';
+            document.body.style.overflow = 'auto';
+        }
+
+        function zoomChange(delta) {
+            currentScale = Math.min(Math.max(0.3, currentScale + delta), 2.0);
+            applyZoom();
+        }
+
+        function zoomReset() {
+            currentScale = 1.0;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const container = document.getElementById('zoomContainer');
+            container.style.transform = `scale(${currentScale})`;
+            
+            // 배율에 따라 프레임 너비/높이 보정
+            container.style.width = `${100 / currentScale}%`;
+            container.style.height = `${100 / currentScale}%`;
+
+            document.getElementById('zoomScaleText').innerText = `${Math.round(currentScale * 100)}%`;
         }
 
         calculateDates();
